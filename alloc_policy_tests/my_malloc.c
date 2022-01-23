@@ -317,4 +317,26 @@ void * bf_malloc(size_t size) {
 }
 
 
+// int main() {
+    
+//     int * t0 = bf_malloc(120);
+//     int * t1 = bf_malloc(240);
+//     int * t2 = bf_malloc(80);
+
+//     bf_free(t0);
+//     bf_free(t2);
+//     printf("The head is %p\n", head);
+//     printf("The tail is %p\n", tail);
+//     printf("The head size is %lu\n", head->data_size);
+//     printf("The tail size is %lu\n", tail->data_size);
+
+//     int * t4 = bf_malloc(20);
+//     printf("The head is %p\n", head);
+//     printf("The tail is %p\n", tail);
+//     printf("The head size is %lu\n", head->data_size);
+//     printf("The tail size is %lu\n", tail->data_size);
+//     return EXIT_SUCCESS;
+// }
+
+
 
