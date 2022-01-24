@@ -29,7 +29,7 @@ typedef struct Node Node;
 
 #define NODE_SIZE sizeof(Node)
 
-#define SPLIT_BLOCK_THRESHOLD 16
+#define SPLIT_BLOCK_THRESHOLD 4096
 
 Node* head = NULL;
 Node* tail = NULL;
@@ -80,5 +80,7 @@ void split_block(Node* ptr, size_t need_size);
 
 /****************************************util**************************/
 void printError(const char * msg);
+unsigned long get_total_free_size();
+unsigned long get_largest_free_data_segment_size();
 /****************************************util**************************/
 

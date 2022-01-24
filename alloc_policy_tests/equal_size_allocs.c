@@ -3,7 +3,7 @@
 #include <time.h>
 #include "my_malloc.h"
 
-#define NUM_ITERS    10000
+#define NUM_ITERS    100
 #define NUM_ITEMS    10000
 #define ALLOC_SIZE   128
 
@@ -65,15 +65,16 @@ int main(int argc, char *argv[])
       FREE(array[j-1000]);
 
       if ((i==NUM_ITERS/2) && (j==NUM_ITEMS/2)) {
-	//Record fragmentation halfway through (try to repsresent steady state)
-	largest_free_block = get_largest_free_data_segment_size();
-	data_segment_free_space = get_total_free_size();
+        //Record fragmentation halfway through (try to repsresent steady state)
+        largest_free_block = get_largest_free_data_segment_size();
+        data_segment_free_space = get_total_free_size();
       } //if
     } //for j
 
     for (j=NUM_ITEMS-1000; j < NUM_ITEMS; j++) {
       FREE(array[j]);
     } //for j
+    printf("ITERATE TIMES: %d\n", i);
   } //for i
 
   //Stop Time

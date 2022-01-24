@@ -284,8 +284,8 @@ void * bf_malloc(size_t size) {
     // search suitable block in Free LinkedList
     if (head != NULL) {
         Node* p = head;
-        size_t min_data_size = LONG_MAX;
-        Node* matched_node = NULL;
+        size_t min_data_size = head->data_size;
+        Node* matched_node = head;
         while (p != NULL) {  // search the BEST FIT node
             if (p->data_size >= size && p->data_size < min_data_size) {
                 min_data_size = p->data_size;
@@ -294,7 +294,7 @@ void * bf_malloc(size_t size) {
             p = p->next;
         }
         // while loop finished
-        if (matched_node) { // if we find the BEST FIT node
+        if (matched_node != head || (matched_node == head && matched_node->data_size >= size) ) { // if we find the BEST FIT node
             // CASE1 : split
             if (matched_node->data_size - size >= NODE_SIZE + SPLIT_BLOCK_THRESHOLD) {
                 split_block(matched_node, size);
@@ -316,5 +316,157 @@ void * bf_malloc(size_t size) {
     return new_space + NODE_SIZE;
 }
 
+unsigned long get_largest_free_data_segment_size() {
+    Node* p = head;
+    size_t max_data_size = 0;
+    while (p != NULL) {
+        if (p->data_size > max_data_size) {
+            max_data_size = p->data_size;
+        }
+        p = p->next;
+    }
+    return max_data_size;
+}
+unsigned long get_total_free_size() {
+    Node* p = head;
+    size_t sum_data_size = 0;
+    while (p != NULL) {
+        sum_data_size += p->data_size;
+        p = p->next;
+    }
+    return sum_data_size;
+}
 
+int main(int argc, char *argv[])
+{
+  const unsigned NUM_ITEMS = 10;
+  int i;
+  int size;
+  int sum = 0;
+  int expected_sum = 0;
+  int *array[NUM_ITEMS];
 
+  size = 4;
+  expected_sum += size * size;
+  array[0] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[0][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[0][i];
+  } //for i
+
+  size = 16;
+  expected_sum += size * size;
+  array[1] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[1][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[1][i];
+  } //for i
+
+  size = 8;
+  expected_sum += size * size;
+  array[2] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[2][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[2][i];
+  } //for i
+
+  size = 32;
+  expected_sum += size * size;
+  array[3] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[3][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[3][i];
+  } //for i
+
+  ff_free(array[0]);
+  ff_free(array[2]);
+
+  size = 7;
+  expected_sum += size * size;
+  array[4] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[4][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[4][i];
+  } //for i
+
+  size = 256;
+  expected_sum += size * size;
+  array[5] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[5][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[5][i];
+  } //for i
+
+  ff_free(array[5]);
+  ff_free(array[1]);
+  ff_free(array[3]);
+
+  size = 23;
+  expected_sum += size * size;
+  array[6] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[6][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[6][i];
+  } //for i
+
+  size = 4;
+  expected_sum += size * size;
+  array[7] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[7][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[7][i];
+  } //for i
+
+  ff_free(array[4]);
+
+  size = 10;
+  expected_sum += size * size;
+  array[8] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[8][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[8][i];
+  } //for i
+
+  size = 32;
+  expected_sum += size * size;
+  array[9] = (int *)ff_malloc(size * sizeof(int));
+  for (i=0; i < size; i++) {
+    array[9][i] = size;
+  } //for i
+  for (i=0; i < size; i++) {
+    sum += array[9][i];
+  } //for i
+
+  ff_free(array[6]);
+  ff_free(array[7]);
+  ff_free(array[8]);
+  ff_free(array[9]);
+
+  if (sum == expected_sum) {
+    printf("Calculated expected value of %d\n", sum);
+    printf("Test passed\n");
+  } else {
+    printf("Expected sum=%d but calculated %d\n", expected_sum, sum);
+    printf("Test failed\n");
+  } //else
+
+  return 0;
+}
