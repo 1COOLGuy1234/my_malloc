@@ -161,7 +161,7 @@ void insert_free_block(Node* ptr) {
     Node* p = head;
     while (p->next != NULL) {
         if (p == ptr) {  // double free
-            printError("Double free!");
+            printError("free(): double free detected");
         }
         if (ptr > p && ptr < p->next) {
             ptr->next = p->next;
@@ -176,7 +176,7 @@ void insert_free_block(Node* ptr) {
     // If everthing goes correctly, the function has returned and the following code will not be implemented
     // The remaining possibility: ptr == tail
     if (ptr == tail) {
-        printError("Double free!");
+        printError("free(): double free detected");
     }
     printError("The function insert_free_block has bug!");
 }
