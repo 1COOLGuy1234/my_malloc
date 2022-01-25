@@ -5,17 +5,17 @@
 #include <limits.h>
 
 
-/*
-管理可用内存区域的数据结构：双向链表  用来存储空闲内存
+/****************************************************************************************************
+Data structures that maintain free blocks: Doubly Linked List
 
 malloc:
-1. 在链表上寻找是否有满足需求的空闲内存，如果有，使用该内存
-2. 如果没有，call sbrk() 申请内存
+1. Search for allocable free block that is big enough in linked list. If do have, use the block. 
+2. If do not have, call `sbrk()` to extend heap
 
 free:
-1. 将内存加入LinkedList
-2. 如果前后相连，合并Node
-*/
+1. add Node into linked list
+2. If node is adjacent to the next node or prev node in memory, merge them
+/****************************************************************************************************
 
 /*
 Node is used to store the meta data for one clock
@@ -29,35 +29,33 @@ typedef struct Node Node;
 
 #define NODE_SIZE sizeof(Node)
 
-#define SPLIT_BLOCK_THRESHOLD 16
+#define SPLIT_BLOCK_THRESHOLD 32
 
 Node* head = NULL;
 Node* tail = NULL;
 
+
+/****************************************malloc**************************************/
 //First Fit malloc
 void * ff_malloc(size_t size);
 
-/**
- * @brief Use First Fit strategy to search for the free block in LinkedList
- * @param need_size the data size we need
- * @return if successfully find proper block in LinkedList, return the pointer pointed to that block
- *         else, return NULL (which means we need to call sbrk()) 
-*/
-Node * ff_search_free_block(size_t need_size);
+//Best Fit malloc
+void * bf_malloc(size_t size);
 
 Node* apply_extra_space_in_heap(size_t data_size);
 
 void * my_sbrk(size_t sz);
 
-//Best Fit malloc
-void * bf_malloc(size_t size);
+void split_block(Node* ptr, size_t need_size);
 
+/*********************************************************************************/
+
+/**************************************free****************************************/
 //First Fit free
 void ff_free(void * ptr);
 
 //Best Fit free
 void bf_free(void * ptr);
-
 
 void my_free(Node* ptr);
 
@@ -75,10 +73,12 @@ void merge_with_both_nodes(Node* ptr);
 
 void split_block(Node* ptr, size_t need_size);
 
-
+/*********************************************************************************/
 
 
 /****************************************util**************************/
 void printError(const char * msg);
+unsigned long get_total_free_size();
+unsigned long get_largest_free_data_segment_size();
 /****************************************util**************************/
 

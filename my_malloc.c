@@ -7,22 +7,35 @@ void printError(const char * msg) {
     exit(EXIT_FAILURE);
 }
 
-// test
-int* create_array(size_t N) {
-    int * array = bf_malloc(N * sizeof(*array));
-    for (int i = 0; i < 10; i++) {
-        array[i] = i;
+unsigned long get_largest_free_data_segment_size() {
+    Node* p = head;
+    size_t max_data_size = 0;
+    while (p != NULL) {
+        if (p->data_size > max_data_size) {
+            max_data_size = p->data_size;
+        }
+        p = p->next;
     }
-    return array;
+    return max_data_size;
+}
+
+unsigned long get_total_free_size() {
+    Node* p = head;
+    size_t sum_data_size = 0;
+    while (p != NULL) {
+        sum_data_size += p->data_size;
+        p = p->next;
+    }
+    return sum_data_size;
 }
 /********************util***************************/
 
 
 
 /**
- * @brief auto check if sbrk failed
+ * @brief encapsulate `sbrk()`, auto check if sbrk failed
  * @param sz the data size I want to apply for
- * @return If failed, return NULL; Else, return new heap top
+ * @return If failed, return NULL; Else, return new heap top address
 */
 void * my_sbrk(size_t sz) {
     if (sbrk(NODE_SIZE + sz) == (void *)(-1)) {   // if sbrk failed
@@ -49,22 +62,6 @@ Node* apply_extra_space_in_heap(size_t data_size) {
     return start_address;
 }
 
-/**
- * @brief use First Fit strategy to search suitable free block
- * @param need_size the size we need
- * @return If we found suitable block in LinkedList, return the pointer point to that block
- *         Else, return NULL
- */
-Node * ff_search_free_block(size_t need_size) {
-    Node* p = head;
-    while(p != NULL) {
-        if (p->data_size >= need_size) {
-            return p;
-        }
-        p = p->next;
-    }
-    return NULL;
-}
 
 /**
  * @brief malloc with First Fit strategy
@@ -99,7 +96,7 @@ void * ff_malloc(size_t size) {
 }
 
 /**
- * @brief free block with First Fit strategy. Specifically, add the block to LinkedList, if there are adjacent block, merge them.
+ * @brief encapsulate `my_free(Node* ptr)`
  * @param ptr the start address of the block needed to be freed
  * @return void
  */
@@ -107,10 +104,21 @@ void ff_free(void* ptr) {
     my_free(ptr - NODE_SIZE);
 }
 
+/**
+ * @brief encapsulate `my_free(Node* ptr)`
+ * @param ptr the start address of the block needed to be freed
+ * @return void
+ */
 void bf_free(void * ptr) {
     my_free(ptr - NODE_SIZE);
 }
 
+
+/**
+ * @brief free block. Specifically, add the block to LinkedList, if there are adjacent block, merge them.
+ * @param ptr the start address of the block needed to be freed
+ * @return void
+ */
 void my_free(Node* ptr) {
     // If head == NULL(LinkedList is empty), head = ptr tail = ptr
     if (head == NULL) {
@@ -125,6 +133,12 @@ void my_free(Node* ptr) {
     insert_free_block(ptr);
 }
 
+
+/**
+ * @brief insert node into linked list when free memory block
+ * @param ptr the node pointer which point to the block we will free
+ * @return void
+ */ 
 void insert_free_block(Node* ptr) {
     if (ptr < head) {
         Node* old_head = head;
@@ -167,6 +181,12 @@ void insert_free_block(Node* ptr) {
     printError("The function insert_free_block has bug!");
 }
 
+
+/**
+ * @brief merge adjancent free memory block
+ * @param ptr point to the block that we just freed
+ * @return void
+ */ 
 void merge_adjacent_block(Node* ptr) {
     Node* low_node = ptr->prev;
     Node* high_node = ptr->next;
@@ -192,6 +212,11 @@ void merge_adjacent_block(Node* ptr) {
     }
 }
 
+/**
+ * @brief maintain linked list. delete the block from list that has been reused
+ * @param ptr point to the block that will be reused
+ * @return void
+ */
 void delete_node(Node* ptr) {
     if (ptr == head && head == tail) {   // Just one node
         head->prev = NULL;
@@ -217,18 +242,33 @@ void delete_node(Node* ptr) {
     }
 }
 
+/**
+ * @brief helper function to realize the function `merge_adjacent_block(Node* ptr)`
+ * @param ptr the same with `merge_adjacent_block(Node* ptr)`
+ * @return void
+ */ 
 void merge_with_low_block(Node* ptr) {
     Node* new_node = ptr->prev;
     new_node->data_size = ptr->data_size + ptr->prev->data_size + NODE_SIZE;
     delete_node(ptr);
 }
 
+/**
+ * @brief helper function to realize the function `merge_adjacent_block(Node* ptr)`
+ * @param ptr the same with `merge_adjacent_block(Node* ptr)`
+ * @return void
+ */
 void merge_with_high_block(Node* ptr) {
     Node* new_node = ptr;
     new_node->data_size = ptr->data_size + ptr->next->data_size + NODE_SIZE;
     delete_node(ptr->next);
 }
 
+/**
+ * @brief helper function to realize the function `merge_adjacent_block(Node* ptr)`
+ * @param ptr the same with `merge_adjacent_block(Node* ptr)`
+ * @return void
+ */
 void merge_with_both_nodes(Node* ptr) {
     Node* new_node = ptr->prev;
     new_node->data_size = ptr->prev->data_size + ptr->data_size + ptr->next->data_size + NODE_SIZE + NODE_SIZE;
@@ -280,20 +320,34 @@ void split_block(Node* ptr, size_t need_size) {
     }
 }
 
+
+/**
+ * @brief malloc with First Fit strategy
+ * @param size the space size to apply
+ * @return the start address of the applied memory; If malloc failed, return NULL
+*/
 void * bf_malloc(size_t size) {
     // search suitable block in Free LinkedList
     if (head != NULL) {
         Node* p = head;
+        // size_t min_data_size = head->data_size;
+        // Node* matched_node = head;
         size_t min_data_size = LONG_MAX;
         Node* matched_node = NULL;
         while (p != NULL) {  // search the BEST FIT node
-            if (p->data_size >= size && p->data_size < min_data_size) {
+            if (p->data_size == size) {
+                matched_node = p;
+                min_data_size = p->data_size;
+                break;
+            }
+            else if (p->data_size > size && p->data_size < min_data_size) {
                 min_data_size = p->data_size;
                 matched_node = p;
             }
             p = p->next;
         }
         // while loop finished
+        // if (matched_node != head || (matched_node == head && matched_node->data_size >= size) ) { // if we find the BEST FIT node
         if (matched_node) { // if we find the BEST FIT node
             // CASE1 : split
             if (matched_node->data_size - size >= NODE_SIZE + SPLIT_BLOCK_THRESHOLD) {
@@ -315,28 +369,4 @@ void * bf_malloc(size_t size) {
     }
     return new_space + NODE_SIZE;
 }
-
-
-// int main() {
-    
-//     int * t0 = bf_malloc(120);
-//     int * t1 = bf_malloc(240);
-//     int * t2 = bf_malloc(80);
-
-//     bf_free(t0);
-//     bf_free(t2);
-//     printf("The head is %p\n", head);
-//     printf("The tail is %p\n", tail);
-//     printf("The head size is %lu\n", head->data_size);
-//     printf("The tail size is %lu\n", tail->data_size);
-
-//     int * t4 = bf_malloc(20);
-//     printf("The head is %p\n", head);
-//     printf("The tail is %p\n", tail);
-//     printf("The head size is %lu\n", head->data_size);
-//     printf("The tail size is %lu\n", tail->data_size);
-//     return EXIT_SUCCESS;
-// }
-
-
 
